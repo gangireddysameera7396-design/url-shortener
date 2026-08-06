@@ -1,0 +1,64 @@
+# URL Shortener
+# Install Flask:
+# pip install flask
+
+from flask import Flask, request, redirect, render_template_string
+import random
+import string
+
+app = Flask(__name__)
+
+# Store URLs temporarily
+url_database = {}
+
+
+def generate_short_code(length=6):
+    characters = string.ascii_letters + string.digits
+    return ''.join(random.choice(characters) for _ in range(length))
+
+
+@app.route("/", methods=["GET", "POST"])
+def home():
+    if request.method == "POST":
+        long_url = request.form["url"]
+
+        short_code = generate_short_code()
+
+        while short_code in url_database:
+            short_code = generate_short_code()
+
+        url_database[short_code] = long_url
+
+        short_url = request.host_url + short_code
+
+        return f"""
+        <h2>URL Shortened Successfully!</h2>
+        <p>Short URL:</p>
+        <a href="{short_url}">{short_url}</a>
+        """
+
+    return """
+    <h1>URL Shortener</h1>
+
+    <form method="post">
+        <input type="text" name="url" 
+        placeholder="Enter long URL" size="40">
+
+        <button type="submit">
+            Shorten
+        </button>
+    </form>
+    """
+
+
+@app.route("/<short_code>")
+def redirect_url(short_code):
+
+    if short_code in url_database:
+        return redirect(url_database[short_code])
+
+    return "URL not found!"
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
